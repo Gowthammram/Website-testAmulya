@@ -1,5 +1,9 @@
 # Amulya: Every Life Is Priceless
 
+> 🌐 **Live 24/7 Website:**  
+> **[https://amulya-companion.onrender.com](https://amulya-companion.onrender.com)**  
+> *Always online 24/7 on all mobile devices and computers.*
+
 A web prototype of an AI-assisted emotional-support app that helps people reach **real human support**. It is a learning prototype, **not** a replacement for professional care, and it cannot predict or prevent suicide.
 
 ## What is real, what is simulated
