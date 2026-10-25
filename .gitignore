@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.*
+!.env.example
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# Local databases
+*.db
+*.sqlite3
+# Node / frontend
+node_modules/
+# dist/ is included so cloud hosts like Render don't need a Node build step
+!frontend/dist/
+*.local
+coverage/
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
