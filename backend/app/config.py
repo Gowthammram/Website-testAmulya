@@ -31,7 +31,7 @@ class Settings:
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.5-flash-lite"
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-20b"
 
 
 def _as_bool(value: str, default: bool) -> bool:
@@ -74,5 +74,5 @@ def get_settings() -> Settings:
         gemini_api_key=gemini_key,
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
         groq_api_key=groq_key,
-        groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        groq_model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
     )

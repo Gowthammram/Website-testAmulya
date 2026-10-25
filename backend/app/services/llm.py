@@ -42,7 +42,8 @@ class GeminiClient:
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": contents,
             "generationConfig": {
-                "maxOutputTokens": 400,
+                # Capped at 200 tokens for ultra-low power consumption and fast response times
+                "maxOutputTokens": 200,
                 "temperature": 0.7,
             },
         }
@@ -79,14 +80,14 @@ class GeminiClient:
 
 
 class GroqClient:
-    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile", timeout: float = 20.0):
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-20b", timeout: float = 20.0):
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
         self.url = "https://api.groq.com/openai/v1/chat/completions"
         self.name = "groq"
 
-    def generate(self, system: str, messages: list[dict]) -> str:
+    def _query_model(self, model: str, system: str, messages: list[dict]) -> str:
         import httpx
 
         groq_messages = [{"role": "system", "content": system}]
@@ -94,34 +95,48 @@ class GroqClient:
             groq_messages.append({"role": m.get("role", "user"), "content": str(m.get("content", ""))})
 
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": groq_messages,
-            "max_tokens": 400,
+            # Capped at 200 tokens for efficient, low-power generation
+            "max_tokens": 200,
             "temperature": 0.7,
         }
 
-        try:
-            response = httpx.post(
-                self.url,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()
-            choices = data.get("choices", [])
-            if not choices:
-                raise LLMUnavailable("Groq returned no choices")
-            text = choices[0].get("message", {}).get("content", "").strip()
-        except Exception as exc:
-            raise LLMUnavailable(f"Groq error: {type(exc).__name__}") from exc
-
+        response = httpx.post(
+            self.url,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        data = response.json()
+        choices = data.get("choices", [])
+        if not choices:
+            raise LLMUnavailable(f"Groq ({model}) returned no choices")
+        text = choices[0].get("message", {}).get("content", "").strip()
         if not text:
-            raise LLMUnavailable("Groq empty reply")
+            raise LLMUnavailable(f"Groq ({model}) empty reply")
         return text
+
+    def generate(self, system: str, messages: list[dict]) -> str:
+        candidate_models = [self.model]
+        for fallback in ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        last_error = None
+        for m in candidate_models:
+            try:
+                return self._query_model(m, system, messages)
+            except Exception as exc:
+                last_error = exc
+                logger.warning(f"Groq model {m} attempt failed: {exc}")
+                continue
+
+        raise LLMUnavailable(f"Groq error: {last_error}") from last_error
 
 
 class AnthropicClient:
